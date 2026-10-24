@@ -1,6 +1,6 @@
 // WebSocket relay for group voice chat with member list. Works on free hosts (Render, Koyeb, etc).
 // Packet (binary): [type 1B][room 4B][sender 4B][payload...]
-//   type 0 = keepalive, 1 = audio (PCM), 2 = hello (payload = UTF-8 name),
+//   type 0 = keepalive, 1 = audio (raw PCM), 4 = audio (Opus), 2 = hello (payload = UTF-8 name),
 //   type 3 = member list from server (payload = JSON [{"id":123,"n":"Name"},...])
 const http = require('http');
 const { WebSocketServer } = require('ws');
@@ -61,7 +61,7 @@ wss.on('connection', (ws) => {
         ws.name = name;
         broadcastList(room);
       }
-    } else if (type === 1) {
+    } else if (type === 1 || type === 4) {   // 1 = raw PCM, 4 = Opus: relay unchanged to everyone else
       for (const c of rooms.get(room)) {
         if (c !== ws && c.readyState === 1) c.send(data, { binary: true });
       }
